@@ -235,6 +235,7 @@ export class UI {
   // --- popups -----------------------------------------------------------------------------------------
   menu(anchor, items, opts = {}) {
     this.closeMenus();
+    this.menuAnchor = anchor instanceof Element ? anchor : null;
     this.openingMenu = true; setTimeout(() => { this.openingMenu = false; }, 0); // the click that opened us is still bubbling
     const layer = this.$('#menuLayer'); const m = document.createElement('div'); m.className = 'menu' + (opts.thumbs ? ' thumbs-menu' : '');
     const build = (list) => list.map((it) => it.sep ? '<div class="sep"></div>' : `<div class="mi${it.disabled ? ' disabled' : ''}${it.checked ? ' checked' : ''}${it.sub ? ' has-sub' : ''}">${it.html || escapeHtml(it.label)}${it.shortcut ? `<span class="sc">${it.shortcut}</span>` : ''}${it.sub ? `<div class="menu sub">${build(it.sub)}</div>` : ''}</div>`).join('');
@@ -553,7 +554,7 @@ export class UI {
     document.addEventListener('paste', (e) => a.pasteEvent(e));
     document.addEventListener('click', (e) => { if (this.openingMenu) return; if (!e.target.closest('#menuLayer') && !e.target.closest('.menu')) this.closeMenus(); });
     // A click on the empty backdrop (not on a menu) closes the menu and goes through to the ribbon tab/button underneath, so e.g. File ▸ Home works in one click.
-    this.$('#menuLayer').addEventListener('click', (e) => { if (e.target !== e.currentTarget) return; this.closeMenus(); const under = document.elementFromPoint(e.clientX, e.clientY); const btn = under && under.closest('#ribbonTabs .tab, #ribbon button'); if (btn) btn.click(); });
+     this.$('#menuLayer').addEventListener('click', (e) => { if (e.target !== e.currentTarget) return; const anchorWas = this.menuAnchor; this.closeMenus(); const under = document.elementFromPoint(e.clientX, e.clientY); const btn = under && under.closest('#ribbonTabs .tab, #ribbon button'); if (btn && btn !== anchorWas) btn.click(); });
     document.addEventListener('contextmenu', (e) => { if (!e.target.closest('#canvasArea') && !e.target.closest('#thumbs') && !e.target.matches('input, textarea')) e.preventDefault(); });
     document.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
     document.addEventListener('drop', async (e) => { e.preventDefault(); const files = [...e.dataTransfer.files]; if (!files.length) return; const doc = files.find((f) => /\.(pptx|json|pptjson|txt|md)$/i.test(f.name)); if (doc) { if (!a.dirty || (await this.confirm('Discard unsaved changes and open the dropped file?'))) a.openFile(doc); return; } const at = e.target.closest('#canvasArea') ? ed.toSlide(e) : null; a.insertImageFiles(files, at); });
