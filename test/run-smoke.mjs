@@ -16,7 +16,7 @@ if (!chrome) { console.error('No Chrome/Edge found; set CHROME_PATH'); process.e
 
 const server = spawn(process.execPath, [fileURLToPath(new URL('./serve.mjs', import.meta.url)), String(PORT)], { stdio: 'ignore' });
 await delay(600);
-const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', `--remote-debugging-port=${CDP}`, `--user-data-dir=${process.env.TEMP || '/tmp'}/officeppt-smoke-profile`, 'about:blank'], { stdio: 'ignore' });
+const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', `--remote-debugging-port=${CDP}`, `--user-data-dir=${process.env.TEMP || '/tmp'}/robbinsppt-smoke-profile`, 'about:blank'], { stdio: 'ignore' });
 const cleanup = () => { try { browser.kill(); } catch { /* ignore */ } try { server.kill(); } catch { /* ignore */ } };
 process.on('exit', cleanup);
 

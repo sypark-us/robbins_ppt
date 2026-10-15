@@ -10,7 +10,7 @@ import { exportPdf, exportImages, exportSvgs, exportHtml, printSlides } from './
 import { shapeInset } from './shapes.js';
 import { chartDataFromGrid } from './charts.js';
 
-const DB = 'officeppt', STORE = 'docs';
+const DB = 'robbinsppt', STORE = 'docs';
 function idb() { return new Promise((res, rej) => { const r = indexedDB.open(DB, 1); r.onupgradeneeded = () => r.result.createObjectStore(STORE); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function idbGet(key) { try { const db = await idb(); return await new Promise((res, rej) => { const t = db.transaction(STORE).objectStore(STORE).get(key); t.onsuccess = () => res(t.result); t.onerror = () => rej(t.error); }); } catch { return null; } }
 async function idbSet(key, val) { try { const db = await idb(); await new Promise((res, rej) => { const t = db.transaction(STORE, 'readwrite').objectStore(STORE).put(val, key); t.onsuccess = res; t.onerror = () => rej(t.error); }); } catch { /* ignore */ } }
@@ -246,7 +246,7 @@ export class App {
     const assets = {}; const collect = (e) => { if (e.assetId && this.pres.assets[e.assetId]) assets[e.assetId] = this.pres.assets[e.assetId]; if (e.children) e.children.forEach(collect); };
     sel.forEach(collect);
     this.clipboard = { elements: clone(sel), assets, slideSize: [this.pres.width, this.pres.height] }; this.pasteCount = 0;
-    try { navigator.clipboard?.writeText('officeppt:' + JSON.stringify(this.clipboard)).catch(() => {}); } catch { /* ignore */ }
+    try { navigator.clipboard?.writeText('robbinsppt:' + JSON.stringify(this.clipboard)).catch(() => {}); } catch { /* ignore */ }
     if (cut) this.deleteSelected();
   }
   paste(data = this.clipboard, at = null) {
@@ -264,7 +264,7 @@ export class App {
     const imgs = items.filter((i) => i.type.startsWith('image/')).map((i) => i.getAsFile()).filter(Boolean);
     if (imgs.length) { ev.preventDefault(); await this.insertImageFiles(imgs); return; }
     const text = ev.clipboardData?.getData('text/plain') || '';
-    if (text.startsWith('officeppt:')) { ev.preventDefault(); try { this.paste(JSON.parse(text.slice(10))); } catch { this.paste(); } return; }
+    if (text.startsWith('robbinsppt:')) { ev.preventDefault(); try { this.paste(JSON.parse(text.slice(11))); } catch { this.paste(); } return; }
     if (text.trim()) { ev.preventDefault(); const t = this.pres.theme; const lines = text.split(/\r?\n/); const el = M.makeText(this.pres.width * 0.1, this.pres.height * 0.3, this.pres.width * 0.8, Math.min(this.pres.height * 0.6, 30 + lines.length * 24), { text: M.textFromString(text), font: t.fonts.body, color: t.text }); this.addElement(el); return; }
     if (this.clipboard) { ev.preventDefault(); this.paste(); }
   }
@@ -295,7 +295,7 @@ export class App {
     const json = M.serialize(this.pres), name = (this.fileName || this.pres.title || 'presentation') + '.json';
     if (window.showSaveFilePicker) {
       try {
-        if (as || !this.fileHandle) this.fileHandle = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'OfficePPT presentation', accept: { 'application/json': ['.json'] } }] });
+        if (as || !this.fileHandle) this.fileHandle = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'RobbinsPPT presentation', accept: { 'application/json': ['.json'] } }] });
         const w = await this.fileHandle.createWritable(); await w.write(json); await w.close();
         this.fileName = this.fileHandle.name.replace(/\.[^.]+$/, ''); this.dirty = false; this.ui.setTitle(); this.ui.toast('Saved ' + this.fileHandle.name); return;
       } catch (e) { if (e.name === 'AbortError') return; console.warn(e); }

@@ -1,5 +1,5 @@
 {
-  "name": "officeppt",
+  "name": "robbinsppt",
   "version": "1.0.0",
   "description": "Browser-based presentation editor (PowerPoint-style): slides, layouts, themes, rich text, shapes, tables, charts, pictures, transitions, animations, slide show with presenter view, and .pptx / PDF / image / HTML export. No server, no build step.",
   "type": "module",

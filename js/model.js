@@ -6,7 +6,7 @@ export const SLIDE_SIZES = { '16:9': [960, 540], '4:3': [720, 540], '16:10': [86
 
 // --- themes -------------------------------------------------------------------------------------
 export const THEMES = [
-  { name: 'Office', bg: { type: 'solid', color: '#FFFFFF' }, text: '#000000', heading: '#000000', accents: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47'], fonts: { heading: 'Calibri', body: 'Calibri' } },
+  { name: 'Classic', bg: { type: 'solid', color: '#FFFFFF' }, text: '#000000', heading: '#000000', accents: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47'], fonts: { heading: 'Calibri', body: 'Calibri' } },
   { name: 'Midnight', bg: { type: 'solid', color: '#0F172A' }, text: '#E2E8F0', heading: '#F8FAFC', accents: ['#38BDF8', '#A78BFA', '#F472B6', '#FBBF24', '#34D399', '#FB7185'], fonts: { heading: 'Segoe UI', body: 'Segoe UI' } },
   { name: 'Ocean', bg: { type: 'gradient', from: '#0B3D91', to: '#1E88E5', angle: 135 }, text: '#FFFFFF', heading: '#FFFFFF', accents: ['#FFD166', '#06D6A0', '#EF476F', '#FFFFFF', '#8ECAE6', '#FB8500'], fonts: { heading: 'Trebuchet MS', body: 'Trebuchet MS' } },
   { name: 'Forest', bg: { type: 'solid', color: '#F4F7F2' }, text: '#1F2A1F', heading: '#1B4332', accents: ['#2D6A4F', '#40916C', '#74C69D', '#D8A657', '#B5838D', '#52796F'], fonts: { heading: 'Georgia', body: 'Verdana' } },
@@ -123,7 +123,7 @@ export function applyLayout(pres, slide, layout) {
 
 export function newPresentation(opts = {}) {
   const [width, height] = SLIDE_SIZES[opts.size || '16:9'] || SLIDE_SIZES['16:9'];
-  const pres = { app: 'officeppt', version: 1, title: opts.title || 'Untitled presentation', width, height, theme: clone(opts.theme || THEMES[0]), footer: { text: '', showNumber: false, showDate: false }, slides: [], assets: {} };
+  const pres = { app: 'robbinsppt', version: 1, title: opts.title || 'Untitled presentation', width, height, theme: clone(opts.theme || THEMES[0]), footer: { text: '', showNumber: false, showDate: false }, slides: [], assets: {} };
   pres.slides.push(makeSlide(pres, 'title'));
   return pres;
 }
@@ -192,7 +192,7 @@ export function slidesFromOutline(pres, text) {
 
 // --- normalisation (loading older / foreign JSON) --------------------------------------------------
 export function normalize(pres) {
-  pres.app = 'officeppt'; pres.version = 1; pres.title ||= 'Untitled presentation'; pres.width ||= 960; pres.height ||= 540;
+  pres.app = 'robbinsppt'; pres.version = 1; pres.title ||= 'Untitled presentation'; pres.width ||= 960; pres.height ||= 540;
   pres.theme = pres.theme && pres.theme.accents ? pres.theme : clone(THEMES[0]);
   pres.footer ||= { text: '', showNumber: false, showDate: false }; pres.assets ||= {}; pres.slides ||= [];
   if (!pres.slides.length) pres.slides.push(makeSlide(pres, 'title'));
@@ -225,10 +225,10 @@ export class History {
 
 // --- demo content --------------------------------------------------------------------------------------
 export function demoPresentation() {
-  const pres = newPresentation({ title: 'OfficePPT demo', theme: THEMES[2] });
+  const pres = newPresentation({ title: 'RobbinsPPT demo', theme: THEMES[2] });
   const t = pres.theme;
   const s1 = pres.slides[0];
-  s1.elements[0].text = textFromString('OfficePPT'); s1.elements[1].text = textFromString('A presentation editor that runs in your browser');
+  s1.elements[0].text = textFromString('RobbinsPPT'); s1.elements[1].text = textFromString('A presentation editor that runs in your browser');
   s1.transition = { type: 'fade', dir: 'left', duration: 0.8 };
   const s2 = makeSlide(pres, 'titleContent');
   s2.elements[0].text = textFromString('What you can do');

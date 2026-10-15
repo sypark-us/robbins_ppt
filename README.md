@@ -1,4 +1,4 @@
-# OfficePPT
+# RobbinsPPT
 
 A free, PowerPoint-style presentation editor that runs entirely in the browser. No server, no
 build step, no dependencies, no uploads: your files never leave your computer.
@@ -75,7 +75,7 @@ node test/screenshot.mjs screenshots   # captures screenshots of the editor and 
 ### Files
 - **Open** PowerPoint `.pptx` files (text with inherited placeholder styles, shapes incl. custom
   geometry, pictures, lines, groups, tables, charts, backgrounds, theme colors/fonts, notes,
-  transitions, entrance animations, hidden slides) and OfficePPT `.json` projects.
+  transitions, entrance animations, hidden slides) and RobbinsPPT `.json` projects.
 - **Save as PowerPoint (.pptx)** that opens in PowerPoint, Keynote, Google Slides and LibreOffice:
   real text, shapes, pictures, tables, native charts, notes, transitions and animations.
 - **Export** PDF, PNG / JPEG images (one file or a zip), SVG (vector), and a standalone HTML

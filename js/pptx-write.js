@@ -210,7 +210,7 @@ function bgXml(pres, slide) {
   return `<p:bg><p:bgPr>${fillXml(bg)}<a:effectLst/></p:bgPr></p:bg>`;
 }
 
-function themeXml(theme, name = 'OfficePPT') {
+function themeXml(theme, name = 'RobbinsPPT') {
   const bgc = theme.bg.type === 'solid' ? theme.bg.color : theme.bg.from;
   const acc = theme.accents;
   const c = (v) => `<a:srgbClr val="${hex6(v)}"/>`;
@@ -300,7 +300,7 @@ export async function writePptx(pres) {
   add('ppt/viewProps.xml', XMLH + `<p:viewPr ${NSDECL}><p:normalViewPr><p:restoredLeft sz="15620"/><p:restoredTop sz="94660"/></p:normalViewPr><p:slideViewPr><p:cSldViewPr><p:cViewPr varScale="1"><p:scale><a:sx n="100" d="100"/><a:sy n="100" d="100"/></p:scale><p:origin x="0" y="0"/></p:cViewPr></p:cSldViewPr></p:slideViewPr><p:gridSpacing cx="76200" cy="76200"/></p:viewPr>`);
   add('ppt/tableStyles.xml', XMLH + `<a:tblStyleLst xmlns:a="${NS_A}" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`);
   add('ppt/theme/theme1.xml', themeXml(pres.theme));
-  add('ppt/theme/theme2.xml', themeXml(pres.theme, 'OfficePPT Notes'));
+  add('ppt/theme/theme2.xml', themeXml(pres.theme, 'RobbinsPPT Notes'));
   add('ppt/slideMasters/slideMaster1.xml', masterXml(pres));
   add('ppt/slideMasters/_rels/slideMaster1.xml.rels', rels([{ type: REL.layout, target: '../slideLayouts/slideLayout1.xml' }, { type: REL.theme, target: '../theme/theme1.xml' }]));
   add('ppt/slideLayouts/slideLayout1.xml', layoutXml(pres));
@@ -308,8 +308,8 @@ export async function writePptx(pres) {
   add('ppt/notesMasters/notesMaster1.xml', notesMasterXml());
   add('ppt/notesMasters/_rels/notesMaster1.xml.rels', rels([{ type: REL.theme, target: '../theme/theme2.xml' }]));
   const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-  add('docProps/core.xml', XMLH + `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${X(pres.title)}</dc:title><dc:creator>OfficePPT</dc:creator><cp:lastModifiedBy>OfficePPT</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`);
-  add('docProps/app.xml', XMLH + `<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>OfficePPT</Application><Slides>${pres.slides.length}</Slides><PresentationFormat>Custom</PresentationFormat><AppVersion>1.0000</AppVersion></Properties>`);
+  add('docProps/core.xml', XMLH + `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${X(pres.title)}</dc:title><dc:creator>RobbinsPPT</dc:creator><cp:lastModifiedBy>RobbinsPPT</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`);
+  add('docProps/app.xml', XMLH + `<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>RobbinsPPT</Application><Slides>${pres.slides.length}</Slides><PresentationFormat>Custom</PresentationFormat><AppVersion>1.0000</AppVersion></Properties>`);
   add('_rels/.rels', rels([{ type: `${NS_R}/officeDocument`, target: 'ppt/presentation.xml' }, { type: 'http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties', target: 'docProps/core.xml' }, { type: `${NS_R}/extended-properties`, target: 'docProps/app.xml' }]));
   const exts = new Set(['png', 'jpeg', 'jpg', 'gif', 'svg', 'webp', 'bmp', 'tiff', 'emf', 'wmf']);
   const defaults = [['rels', 'application/vnd.openxmlformats-package.relationships+xml'], ['xml', 'application/xml'], ...[...exts].map((e) => [e, e === 'svg' ? 'image/svg+xml' : e === 'jpg' ? 'image/jpeg' : e === 'emf' ? 'image/x-emf' : e === 'wmf' ? 'image/x-wmf' : `image/${e}`])];

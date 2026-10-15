@@ -1,5 +1,5 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>OfficePPT smoke test</title>
+<html><head><meta charset="utf-8"><title>RobbinsPPT smoke test</title>
 <style>body{font:12px monospace;background:#111;color:#ddd;margin:0}#out{white-space:pre-wrap;padding:8px}iframe{width:1400px;height:900px;border:0;display:block}</style></head>
 <body>
 <div id="out">running…</div>
@@ -140,7 +140,7 @@ try {
     app.show.key(new W.KeyboardEvent('keydown', { key: 'b' })); if (!$('#show .blackout.on')) throw new Error('blackout');
     app.show.stop(); if ($('#show')) throw new Error('not stopped');
   });
-  await test('autosave stored in IndexedDB', async () => { await sleep(1200); const db = await new Promise((res, rej) => { const r = W.indexedDB.open('officeppt', 1); r.onsuccess = () => res(r.result); r.onerror = rej; }); const v = await new Promise((res) => { const t = db.transaction('docs').objectStore('docs').get('autosave'); t.onsuccess = () => res(t.result); }); if (!v || !v.json) throw new Error('no autosave'); });
+  await test('autosave stored in IndexedDB', async () => { await sleep(1200); const db = await new Promise((res, rej) => { const r = W.indexedDB.open('robbinsppt', 1); r.onsuccess = () => res(r.result); r.onerror = rej; }); const v = await new Promise((res) => { const t = db.transaction('docs').objectStore('docs').get('autosave'); t.onsuccess = () => res(t.result); }); if (!v || !v.json) throw new Error('no autosave'); });
 } catch (e) { fail('harness', e); }
 finish();
 </script>

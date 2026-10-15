@@ -1,4 +1,4 @@
-// Read a PowerPoint .pptx package into the OfficePPT document model.
+// Read a PowerPoint .pptx package into the RobbinsPPT document model.
 import { readZip } from './zip.js';
 import { parseXml, child, children, path, find, findAll, attr, num, textOf, rootEl } from './xml.js';
 import { uid, bytesToDataUrl, extMime, toHex, parseColor, clone } from './util.js';

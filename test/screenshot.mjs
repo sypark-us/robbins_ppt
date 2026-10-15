@@ -13,7 +13,7 @@ const chrome = candidates.find((p) => existsSync(p));
 if (!chrome) { console.error('No Chrome found'); process.exit(2); }
 const server = spawn(process.execPath, [fileURLToPath(new URL('./serve.mjs', import.meta.url)), String(PORT)], { stdio: 'ignore' });
 await delay(500);
-const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', '--window-size=1400,900', `--remote-debugging-port=${CDP}`, `--user-data-dir=${process.env.TEMP || '/tmp'}/officeppt-shot-profile`, 'about:blank'], { stdio: 'ignore' });
+const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', '--window-size=1400,900', `--remote-debugging-port=${CDP}`, `--user-data-dir=${process.env.TEMP || '/tmp'}/robbinsppt-shot-profile`, 'about:blank'], { stdio: 'ignore' });
 const cleanup = () => { try { browser.kill(); } catch { /* */ } try { server.kill(); } catch { /* */ } };
 process.on('exit', cleanup);
 let targets = null;

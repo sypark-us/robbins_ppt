@@ -325,7 +325,7 @@ export class UI {
     this.thumbSel = new Set([a.slideIndex]); this.highlightThumbs();
     this.updateToolbar(); this.updateProps();
   }
-  setTitle() { const t = this.$('#docTitle'); if (document.activeElement !== t) t.value = this.app.pres.title; document.title = `${this.app.dirty ? '• ' : ''}${this.app.pres.title} — OfficePPT`; }
+  setTitle() { const t = this.$('#docTitle'); if (document.activeElement !== t) t.value = this.app.pres.title; document.title = `${this.app.dirty ? '• ' : ''}${this.app.pres.title} — RobbinsPPT`; }
   toast(msg, ms = 2500) { const t = this.$('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(this.toastT); this.toastT = setTimeout(() => t.classList.remove('on'), ms); }
   busy(msg) { const b = this.$('#busy'); if (!msg) { b.classList.remove('on'); return; } b.querySelector('span').textContent = msg; b.classList.add('on'); }
 
@@ -475,7 +475,7 @@ export class UI {
       const first = d.querySelector('input, textarea, select'); if (first) { first.focus(); if (first.select) first.select(); } else d.querySelector('.primary')?.focus();
     });
   }
-  async alert(msg) { await this.dialog({ title: 'OfficePPT', html: `<p>${escapeHtml(msg)}</p>`, cancelLabel: '' }); }
+  async alert(msg) { await this.dialog({ title: 'RobbinsPPT', html: `<p>${escapeHtml(msg)}</p>`, cancelLabel: '' }); }
   async confirm(msg) { return !!(await this.dialog({ title: 'Confirm', html: `<p>${escapeHtml(msg)}</p>` })); }
   async prompt(title, value = '') { const d = await this.dialog({ title, html: `<input type="text" id="pv" value="${escapeHtml(value)}" style="width:100%">` }); return d ? d.querySelector('#pv').value : null; }
   pickFile(accept, multiple = false, withHandle = false) {
@@ -538,7 +538,7 @@ export class UI {
   }
   helpDialog() {
     const rows = [['Ctrl+S / Ctrl+Shift+S', 'Save / Save as (.json)'], ['Ctrl+Shift+E', 'Save as PowerPoint (.pptx)'], ['Ctrl+O', 'Open .pptx or .json'], ['Ctrl+M', 'New slide'], ['Ctrl+Shift+D', 'Duplicate slide'], ['Ctrl+Z / Ctrl+Y', 'Undo / Redo'], ['Ctrl+C / X / V / D', 'Copy / Cut / Paste / Duplicate'], ['Ctrl+A', 'Select all'], ['Delete', 'Delete selection'], ['Arrows (+Shift)', 'Nudge 1 pt (10 pt)'], ['Enter / F2', 'Edit text of the selected object'], ['Esc', 'Finish editing / deselect / cancel'], ['Tab / Shift+Tab', 'Next object · in text: change list level'], ['Ctrl+B / I / U', 'Bold / Italic / Underline'], ['Ctrl+L / E / R', 'Align left / center / right'], ['Ctrl+] / Ctrl+[', 'Grow / shrink font'], ['Ctrl+G / Ctrl+Shift+G', 'Group / Ungroup'], ['Ctrl+K', 'Hyperlink'], ['Ctrl+F', 'Find and replace'], ['Ctrl+P', 'Print'], ['Ctrl+= / Ctrl+- / Ctrl+0', 'Zoom in / out / fit'], ['Ctrl+wheel', 'Zoom'], ['PgUp / PgDn', 'Previous / next slide'], ['F5 / Shift+F5', 'Slide show from start / current'], ['Shift+drag', 'Keep proportions / constrain movement'], ['Alt+drag', 'Drag a copy of the selection'], ['Drop files', 'Drop pictures to insert them, or a .pptx/.json to open it']];
-    this.dialog({ title: 'OfficePPT — keyboard shortcuts', width: 560, html: `<table class="keys">${rows.map(([k, v]) => `<tr><td><kbd>${escapeHtml(k)}</kbd></td><td>${escapeHtml(v)}</td></tr>`).join('')}</table><p class="dim">Everything runs locally in your browser. Files never leave your computer.</p>`, cancelLabel: '', okLabel: 'Close' });
+    this.dialog({ title: 'RobbinsPPT — keyboard shortcuts', width: 560, html: `<table class="keys">${rows.map(([k, v]) => `<tr><td><kbd>${escapeHtml(k)}</kbd></td><td>${escapeHtml(v)}</td></tr>`).join('')}</table><p class="dim">Everything runs locally in your browser. Files never leave your computer.</p>`, cancelLabel: '', okLabel: 'Close' });
   }
 
   // --- previews ------------------------------------------------------------------------------------------------

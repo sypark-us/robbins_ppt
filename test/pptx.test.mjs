@@ -61,10 +61,10 @@ test('writePptx produces a valid package: content types, rels, parts, well-forme
 test('round trip preserves content, formatting, media, notes, transitions, animations', async () => {
   const p = richDemo();
   const back = await readPptx(await writePptx(p));
-  assert.equal(back.slides.length, 4); assert.equal(back.width, 960); assert.equal(back.title, 'OfficePPT demo');
+  assert.equal(back.slides.length, 4); assert.equal(back.width, 960); assert.equal(back.title, 'RobbinsPPT demo');
   assert.deepEqual(back.theme.accents.map((c) => c.toLowerCase()), p.theme.accents.map((c) => c.toLowerCase()));
   assert.equal(back.theme.fonts.heading, 'Trebuchet MS');
-  const s1 = back.slides[0]; assert.equal(s1.layout, 'title'); assert.equal(M.textToString(s1.elements[0].text), 'OfficePPT'); assert.equal(s1.elements[0].ph, 'ctitle'); assert.equal(s1.transition.type, 'fade');
+  const s1 = back.slides[0]; assert.equal(s1.layout, 'title'); assert.equal(M.textToString(s1.elements[0].text), 'RobbinsPPT'); assert.equal(s1.elements[0].ph, 'ctitle'); assert.equal(s1.transition.type, 'fade');
   const s2 = back.slides[1]; assert.equal(s2.hidden, true); assert.equal(s2.advance, 4); assert.equal(s2.background.type, 'image'); assert.equal(s2.notes, 'Mention that everything stays on the local machine.');
   const body = s2.elements.find((e) => e.ph === 'body'); assert.equal(body.text.paragraphs.length, 5); assert.equal(body.text.paragraphs[0].bullet, '•'); assert.equal(body.anim.type, 'fly');
   const s3 = back.slides[2];

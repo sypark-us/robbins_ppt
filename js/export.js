@@ -55,7 +55,7 @@ export async function exportPdf(pres, opts = {}) {
   });
   objects[catalogId - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
   objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
-  const infoId = add(`<< /Title (${pdfString(pres.title)}) /Producer (OfficePPT) /Creator (OfficePPT) >>`);
+  const infoId = add(`<< /Title (${pdfString(pres.title)}) /Producer (RobbinsPPT) /Creator (RobbinsPPT) >>`);
   void infoNotes;
   const parts = [enc.encode('%PDF-1.4\n%\xe2\xe3\xcf\xd3\n')]; let offset = parts[0].length; const offsets = [];
   objects.forEach((o, i) => {
