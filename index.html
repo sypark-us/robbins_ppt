@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfficePPT — presentation editor</title>
+<meta name="description" content="Free, local, browser-based presentation editor: slides, layouts, themes, shapes, tables, charts, pictures, transitions, animations, slide show with presenter view, and PowerPoint (.pptx), PDF, image and HTML export.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23c43e1c'/%3E%3Cpath d='M7 5h6a4 4 0 0 1 0 8H9v6H7z' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="titlebar">
+    <span class="brand">Office<span>PPT</span></span>
+    <div id="ribbonTabs"></div>
+    <input id="docTitle" class="doctitle" value="Untitled presentation" title="Presentation title" spellcheck="false">
+    <button id="presentBtn" class="primary" title="Start slide show (F5)">▶ Present</button>
+  </div>
+  <div id="ribbon"></div>
+  <div id="main">
+    <div id="slidePanel" tabindex="0"><div id="thumbs"></div></div>
+    <div id="center">
+      <div id="canvasArea" tabindex="0"></div>
+      <div id="notesBar"><textarea id="notes" placeholder="Click to add speaker notes" spellcheck="true"></textarea></div>
+    </div>
+    <div id="propPanel"></div>
+  </div>
+  <div id="statusbar"></div>
+</div>
+<div id="menuLayer"></div>
+<div id="dialogLayer"></div>
+<div id="toast"></div>
+<div id="busy"><div class="spinner"></div><span>Working…</span></div>
+<input type="file" id="fileInput" hidden>
+<noscript><p style="padding:20px;font-family:sans-serif">OfficePPT needs JavaScript. Serve this folder (for example <code>node test/serve.mjs 8080</code>) and open it in a modern browser.</p></noscript>
+<script>if (location.protocol === 'file:') document.body.insertAdjacentHTML('afterbegin', '<div style="position:fixed;inset:0;z-index:99;background:#fff;color:#222;font:15px system-ui;padding:40px"><h2>Please serve this folder</h2><p>Browsers refuse to load ES modules from <code>file://</code>. Run <code>node test/serve.mjs 8080</code> (or <code>npx serve .</code>, or <code>python -m http.server 8080</code>) in this folder and open <a href="http://localhost:8080/">http://localhost:8080/</a>.</p></div>');</script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

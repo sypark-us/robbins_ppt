@@ -1,0 +1,146 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>OfficePPT smoke test</title>
+<style>body{font:12px monospace;background:#111;color:#ddd;margin:0}#out{white-space:pre-wrap;padding:8px}iframe{width:1400px;height:900px;border:0;display:block}</style></head>
+<body>
+<div id="out">running…</div>
+<iframe id="f" src="../index.html?demo"></iframe>
+<script type="module">
+const out = document.getElementById('out');
+const results = []; let errors = 0;
+const pass = (n) => { results.push('PASS ' + n); console.log('PASS ' + n); };
+const fail = (n, e) => { errors++; results.push('FAIL ' + n + ': ' + (e && e.stack || e)); console.log('FAIL ' + n + ': ' + (e && e.stack || e)); };
+const ok = (cond, n) => (cond ? pass(n) : fail(n, 'assertion failed'));
+const test = async (n, fn) => { try { await fn(); pass(n); } catch (e) { fail(n, e); } };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const finish = () => { out.textContent = 'SMOKE-RESULTS\n' + results.join('\n') + `\nERRORS ${errors}`; };
+window.addEventListener('error', (e) => fail('uncaught', e.message));
+
+const f = document.getElementById('f');
+await new Promise((r) => { f.onload = r; });
+for (let i = 0; i < 100 && !(f.contentWindow.app && f.contentWindow.app.pres); i++) await sleep(100);
+await sleep(400);
+const W = f.contentWindow, app = W.app, doc = W.document, ed = app.editor, M = app.M;
+W.addEventListener('error', (e) => fail('app uncaught', e.message));
+const $ = (s) => doc.querySelector(s), $$ = (s) => [...doc.querySelectorAll(s)];
+const { writePptx } = await import('../js/pptx-write.js');
+const { readPptx } = await import('../js/pptx-read.js');
+const { exportPdf, slideToImage, exportHtml } = await import('../js/export.js');
+const { readZip } = await import('../js/zip.js');
+const { parseXml } = await import('../js/xml.js');
+
+function pointer(type, target, x, y, opts = {}) {
+  const r = ed.slideEl.getBoundingClientRect();
+  const ev = new W.PointerEvent(type, { bubbles: true, cancelable: true, clientX: r.left + x * ed.zoom, clientY: r.top + y * ed.zoom, button: 0, buttons: type === 'pointerup' ? 0 : 1, pointerId: 1, isPrimary: true, ...opts });
+  (type === 'pointerdown' ? target : W).dispatchEvent(ev);
+}
+async function drag(target, x1, y1, x2, y2, opts = {}) {
+  pointer('pointerdown', target, x1, y1, opts); await sleep(10);
+  pointer('pointermove', W, x1 + (x2 - x1) / 2, y1 + (y2 - y1) / 2, opts); await sleep(10);
+  pointer('pointermove', W, x2, y2, opts); await sleep(10);
+  pointer('pointerup', W, x2, y2, opts); await sleep(30);
+}
+const elNode = (id) => ed.slideEl.querySelector(`.el[data-id="${id}"]`);
+const key = (target, key, opts = {}) => target.dispatchEvent(new W.KeyboardEvent('keydown', { bubbles: true, cancelable: true, key, ...opts }));
+
+try {
+  await test('app loaded the demo presentation', async () => { if (app.pres.slides.length !== 4) throw new Error('slides ' + app.pres.slides.length); if ($$('#thumbs .thumb').length !== 4) throw new Error('thumbs'); if (!$('#ribbon .rgroup')) throw new Error('ribbon'); });
+  await test('canvas renders slide elements', async () => { app.gotoSlide(2); await sleep(50); const n = $$('#canvasArea .slide .el').length; if (n < 7) throw new Error('elements ' + n); if (!$('#canvasArea .el-chart svg rect')) throw new Error('chart'); if ($$('#canvasArea .el-table .cell').length !== 9) throw new Error('table cells'); });
+  await test('thumbnails are SVG and reflect slide count', async () => { if (!$('#thumbs .thumb-img svg')) throw new Error('no svg'); });
+
+  // --- selection & dragging ---
+  await test('click selects, drag moves an element with snapping guides', async () => {
+    const shape = app.slide.elements.find((e) => e.shape === 'roundRect'); const node = elNode(shape.id);
+    const x0 = shape.x; await drag(node, shape.x + 20, shape.y + 20, shape.x + 120, shape.y + 60);
+    if (ed.selection[0] !== shape.id) throw new Error('not selected'); if (Math.abs(shape.x - (x0 + 100)) > 8) throw new Error('moved ' + shape.x);
+    if (!$('#canvasArea .selbox .handle.se')) throw new Error('handles');
+  });
+  await test('resize via handle keeps the opposite corner fixed', async () => {
+    const shape = ed.single; const h = $('#canvasArea .handle.se'); const { x, y, w } = shape;
+    await drag(h, x + shape.w, y + shape.h, x + shape.w + 40, y + shape.h + 20);
+    if (Math.abs(shape.w - (w + 40)) > 8 || Math.abs(shape.x - x) > 0.5) throw new Error(`w ${shape.w} x ${shape.x}`);
+  });
+  await test('rotate handle rotates', async () => { const el = ed.single; const h = $('#canvasArea .handle.rotate'); const cx = el.x + el.w / 2, cy = el.y + el.h / 2; await drag(h, cx, el.y - 30, cx + 100, cy, { shiftKey: true }); if (!(el.rotation > 60 && el.rotation < 120)) throw new Error('rot ' + el.rotation); el.rotation = 0; app.commit(); ed.render(); });
+  await test('marquee selects contained elements', async () => { await drag(ed.slideEl, 40, 120, 480, 300); if (ed.selection.length < 2) throw new Error('sel ' + ed.selection.length); });
+  await test('undo / redo restore state', async () => { const snap = () => JSON.stringify(app.pres.slides[2].elements.map((e) => [e.x, e.w, e.rotation])); const before = snap(); app.undo(); const mid = snap(); if (mid === before) throw new Error('undo did nothing'); app.redo(); if (snap() !== before) throw new Error('redo'); });
+
+  // --- text editing ---
+  await test('text editing: type, Enter splits paragraph, bullets, bold', async () => {
+    app.gotoSlide(1); await sleep(30);
+    const body = app.slide.elements.find((e) => e.ph === 'body'); ed.startTextEdit(body);
+    if (!ed.editing) throw new Error('not editing');
+    const txt = ed.editing.txt; const sel = W.getSelection(); const r = doc.createRange(); r.selectNodeContents(txt); r.collapse(false); sel.removeAllRanges(); sel.addRange(r);
+    doc.execCommand('insertText', false, ' extra'); ed.syncEditing();
+    if (!M.textToString(body.text).includes('HTML extra')) throw new Error('typed text missing: ' + M.textToString(body.text).slice(-40));
+    const n0 = body.text.paragraphs.length; key(txt, 'Enter'); await sleep(10);
+    if (body.text.paragraphs.length !== n0 + 1) throw new Error('enter split ' + body.text.paragraphs.length);
+    if (body.text.paragraphs[n0].bullet !== '•') throw new Error('bullet carried');
+    doc.execCommand('insertText', false, 'New bullet'); ed.syncEditing();
+    key(txt, 'Tab'); await sleep(10); if (body.text.paragraphs[n0].level !== 1) throw new Error('indent');
+    // select the word and bold it
+    const c = ed.getCaret(); ed.setCaret({ start: { para: n0, offset: 0 }, end: { para: n0, offset: 3 } }); app.format('bold');
+    const runs = body.text.paragraphs[n0].runs; if (!runs[0].bold || runs[0].text !== 'New') throw new Error('bold run ' + JSON.stringify(runs));
+    void c; ed.endTextEdit(true); if (ed.editing) throw new Error('still editing');
+    if (!M.textToString(app.slide.elements.find((e) => e.ph === 'body').text).includes('New bullet')) throw new Error('lost after commit');
+  });
+  await test('typing on a selected text box starts editing; Escape ends', async () => { const t = app.slide.elements.find((e) => e.ph === 'title'); ed.select(t.id); key($('#canvasArea'), 'x'); await sleep(10); if (!ed.editing) throw new Error('no edit'); key(ed.editing.txt, 'Escape'); if (ed.editing) throw new Error('escape'); if (M.textToString(t.text) !== 'x') throw new Error('replaced text: ' + M.textToString(t.text)); app.undo(); });
+  await test('empty new text box is removed after editing', async () => { const el = app.addElement(M.makeText(100, 100, 200, 40), { edit: true }); key(ed.editing.txt, 'Escape'); if (app.slide.elements.find((e) => e.id === el.id)) throw new Error('kept'); });
+  await test('format toolbar reflects selection', async () => { const t = app.slide.elements.find((e) => e.ph === 'title'); ed.select(t.id); app.ui.setTab('home'); if ($('#ribbon [data-cmd=font]').value !== t.font) throw new Error('font'); app.format('align', 'center'); if (!$('#ribbon [data-cmd=alignCenter]').classList.contains('active')) throw new Error('align state'); app.format('sizeStep', 1); if (t.size <= 40) throw new Error('size'); });
+
+  // --- insertion ---
+  await test('insert shape by dragging', async () => { app.insertShape('ellipse'); await drag(ed.slideEl, 600, 300, 760, 420); const el = ed.single; if (!el || el.type !== 'shape' || el.shape !== 'ellipse' || Math.abs(el.w - 160) > 1) throw new Error(JSON.stringify(el && [el.type, el.w])); });
+  await test('insert line by click gives a default line', async () => { app.insertLine(true); await drag(ed.slideEl, 100, 400, 101, 400); const el = ed.single; if (!el || el.type !== 'line' || !el.arrowEnd) throw new Error('line'); });
+  await test('insert table and edit a cell', async () => { app.insertTable(2, 3); const t = ed.single; if (t.type !== 'table' || t.rows.length !== 2) throw new Error('table'); ed.startCellEdit(t, 1, 1); doc.execCommand('insertText', false, 'Cell text'); ed.endCellEdit(true); if (t.rows[1][1].text !== 'Cell text') throw new Error('cell ' + JSON.stringify(t.rows[1][1])); app.tableOp('addRow'); if (t.rows.length !== 3) throw new Error('addRow'); });
+  await test('insert chart and update data', async () => { app.insertChart('pie'); const c = ed.single; app.setChartData(c, [['', 'Sales'], ['A', '10'], ['B', '30']]); if (c.categories.length !== 2 || c.series[0].values[1] !== 30) throw new Error('data'); if (!$('#canvasArea .el-chart path')) throw new Error('pie path'); });
+  await test('insert picture from a generated file', async () => { const cv = doc.createElement('canvas'); cv.width = 300; cv.height = 200; const g = cv.getContext('2d'); g.fillStyle = '#39f'; g.fillRect(0, 0, 300, 200); const blob = await new Promise((r) => cv.toBlob(r, 'image/png')); await app.insertImageFiles([new W.File([blob], 'pic.png', { type: 'image/png' })]); const im = ed.single; if (!im || im.type !== 'image' || Math.abs(im.w / im.h - 1.5) > 0.01) throw new Error('image'); if (!$('#canvasArea .el-image img')) throw new Error('img node'); });
+
+  // --- clipboard / arrange ---
+  await test('copy, paste, duplicate, delete', async () => { const n = app.slide.elements.length; app.copy(); app.paste(); if (app.slide.elements.length !== n + 1) throw new Error('paste'); app.duplicate(); if (app.slide.elements.length !== n + 2) throw new Error('dup'); app.deleteSelected(); if (app.slide.elements.length !== n + 1) throw new Error('delete'); });
+  await test('group / ungroup / align', async () => { const els = app.slide.elements.slice(-3); ed.select(els.map((e) => e.id)); app.arrange('group'); const g = ed.single; if (!g || g.type !== 'group' || g.children.length !== 3) throw new Error('group'); app.arrange('alignLeft'); if (Math.abs(g.x) > 0.5) throw new Error('align ' + g.x); app.arrange('ungroup'); if (ed.selection.length !== 3) throw new Error('ungroup'); app.arrange('front'); });
+  await test('keyboard nudge and delete', async () => { const el = app.slide.elements[app.slide.elements.length - 1]; ed.select(el.id); const x = el.x; key($('#canvasArea'), 'ArrowRight', { shiftKey: true }); if (el.x !== x + 10) throw new Error('nudge'); key($('#canvasArea'), 'Delete'); if (app.slide.elements.includes(el)) throw new Error('delete'); });
+
+  // --- slides ---
+  await test('new slide, layout, duplicate, move, delete', async () => {
+    const n = app.pres.slides.length; app.newSlide('twoContent'); if (app.pres.slides.length !== n + 1 || app.slide.layout !== 'twoContent') throw new Error('new'); if (app.slide.elements.filter((e) => e.ph === 'body').length !== 2) throw new Error('ph');
+    app.setLayout('titleOnly'); if (app.slide.elements.some((e) => e.ph === 'body')) throw new Error('layout');
+    app.duplicateSlide(); if (app.pres.slides.length !== n + 2) throw new Error('dup');
+    const id = app.slide.id; app.moveSlides([app.slideIndex], 0); if (app.pres.slides[0].id !== id) throw new Error('move');
+    app.deleteSlides([0]); app.deleteSlides([app.pres.slides.length - 1]); if (app.pres.slides.length !== n) throw new Error('del ' + app.pres.slides.length);
+    if ($$('#thumbs .thumb').length !== n) throw new Error('thumbs');
+  });
+  await test('theme, background, transition, notes, footer', async () => { app.setTheme('Midnight'); if (app.pres.theme.name !== 'Midnight') throw new Error('theme'); app.setBackground({ type: 'solid', color: '#123456' }); if (app.slide.background.color !== '#123456') throw new Error('bg'); if (!ed.slideEl.style.cssText.includes('rgb(18, 52, 86)')) throw new Error('bg css ' + ed.slideEl.style.cssText); app.setTransition({ type: 'wipe', dir: 'up' }); if (app.slide.transition.type !== 'wipe') throw new Error('tr'); $('#notes').value = 'hello notes'; $('#notes').dispatchEvent(new W.Event('input')); if (app.slide.notes !== 'hello notes') throw new Error('notes'); app.pres.footer = { text: 'Footer', showNumber: true, showDate: false }; app.refresh(); if ($$('#canvasArea .footer').length !== 2) throw new Error('footer'); });
+  await test('find and replace', async () => { const n = app.find('What you can do', 'What it does', true); if (n !== 1) throw new Error('count ' + n); if (!app.findNext('shapes')) throw new Error('findNext'); });
+  await test('outline import', async () => { const n = app.pres.slides.length; app.importOutline('# A\n- one\n  - two\n# B\n- three'); if (app.pres.slides.length !== n + 2) throw new Error('count'); const s = app.pres.slides[app.slideIndex]; if (M.textToString(s.elements[0].text) !== 'A' || s.elements[1].text.paragraphs[1].level !== 1) throw new Error('content'); });
+  await test('properties panel edits an element', async () => { const si = app.pres.slides.findIndex((s) => s.elements.some((e) => e.shape === 'ellipse')); const el = app.pres.slides[si].elements.find((e) => e.shape === 'ellipse'); app.gotoSlide(si); ed.select(el.id); const inp = $('#propPanel input[data-prop=w]'); if (!inp) throw new Error('no panel'); inp.value = '222'; inp.dispatchEvent(new W.Event('change', { bubbles: true })); if (Math.abs(el.w - 222) > 0.01) throw new Error('w ' + el.w); const sh = $('#propPanel input[data-prop=shadow]'); sh.checked = true; sh.dispatchEvent(new W.Event('change', { bubbles: true })); if (!el.shadow) throw new Error('shadow'); });
+  await test('context menu and shapes popup open', async () => { ed.slideEl.dispatchEvent(new W.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 300, clientY: 300 })); if (!$('#menuLayer .menu .mi')) throw new Error('menu'); app.ui.closeMenus(); app.ui.cmd('shapesMenu', null, $('#ribbon [data-cmd=shapesMenu]')); if ($$('#menuLayer .shape-btn').length < 30) throw new Error('shapes'); app.ui.closeMenus(); });
+  await test('zoom controls', async () => { ed.setZoom(0.5); if (!ed.wrap.style.width.startsWith('480')) throw new Error(ed.wrap.style.width); ed.fitZoom(); if (!(ed.zoom > 0.3 && ed.zoom < 3)) throw new Error('fit ' + ed.zoom); });
+
+  // --- export / import ---
+  let pptxBytes;
+  await test('export PPTX and re-import (round trip in browser)', async () => {
+    pptxBytes = await writePptx(app.pres); if (pptxBytes.length < 5000) throw new Error('small');
+    const zip = await readZip(pptxBytes); if (!zip.has('ppt/presentation.xml') || !zip.has('[Content_Types].xml')) throw new Error('parts');
+    for (const [k, e] of zip) if (/\.(xml|rels)$/.test(k)) { const d = parseXml(await e.text()); if (!d.children.length) throw new Error('bad xml ' + k); }
+    const back = await readPptx(pptxBytes); if (back.slides.length !== app.pres.slides.length) throw new Error('slides ' + back.slides.length);
+    const s3 = back.slides.find((x) => x.elements.some((e) => e.type === 'chart')) || { elements: [] }; if (!s3.elements.some((e) => e.type === 'chart') || !s3.elements.some((e) => e.type === 'table') || !s3.elements.some((e) => e.type === 'image')) throw new Error('elements lost: ' + s3.elements.map((e) => e.type));
+    if (!back.slides.some((x) => x.notes === 'hello notes')) throw new Error('notes'); if (!back.slides.some((x) => x.transition.type === 'wipe' && x.transition.dir === 'up')) throw new Error('transition');
+    if (!s3.elements.find((e) => e.shape === 'ellipse' && e.shadow)) throw new Error('shadow');
+  });
+  await test('open the exported PPTX through the app', async () => { const title = app.pres.title; await app.openFile(new W.File([pptxBytes], 'roundtrip.pptx', { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' })); if (app.pres.slides.length < 4 || $$('#thumbs .thumb').length < 4) throw new Error('open'); if (app.pres.title !== title) throw new Error('title ' + app.pres.title); });
+  await test('export PDF', async () => { const pdf = await exportPdf({ ...app.pres, slides: app.pres.slides.slice(0, 2) }); const head = String.fromCharCode(...pdf.slice(0, 5)); if (head !== '%PDF-') throw new Error(head); if (!new TextDecoder('latin1').decode(pdf).includes('/Count 2')) throw new Error('pages'); });
+  await test('export PNG and HTML', async () => { const png = await slideToImage(app.pres, app.pres.slides[0], 'image/png', 1); if (png[0] !== 0x89 || png[1] !== 0x50) throw new Error('png'); const html = exportHtml(app.pres); if (!html.includes('<svg') || !html.includes('go(')) throw new Error('html'); });
+  await test('save as JSON and reopen', async () => { const json = M.serialize(app.pres); const back = M.deserialize(json); if (back.slides.length !== app.pres.slides.length) throw new Error('json'); await app.openFile(new W.File([json], 'doc.json', { type: 'application/json' })); if ($$('#thumbs .thumb').length !== back.slides.length) throw new Error('reopen'); });
+
+  // --- slide show ---
+  await test('slide show runs with animations and transitions', async () => {
+    app.startShow(0, { windowed: true }); await sleep(100); if (!$('#show .layer.cur .slide')) throw new Error('stage');
+    app.show.next(); await sleep(50); if (app.show.pos !== 1) throw new Error('pos ' + app.show.pos);
+    const hidden = $$('#show .anim-hidden').length; app.show.next(); await sleep(50); if ($$('#show .anim-hidden').length !== hidden - 1) throw new Error('animation step');
+    app.show.next(); await sleep(100); if (app.show.pos !== 2) throw new Error('pos2 ' + app.show.pos); if (!$('#show .layer.cur')) throw new Error('layer');
+    app.show.key(new W.KeyboardEvent('keydown', { key: 'b' })); if (!$('#show .blackout.on')) throw new Error('blackout');
+    app.show.stop(); if ($('#show')) throw new Error('not stopped');
+  });
+  await test('autosave stored in IndexedDB', async () => { await sleep(1200); const db = await new Promise((res, rej) => { const r = W.indexedDB.open('officeppt', 1); r.onsuccess = () => res(r.result); r.onerror = rej; }); const v = await new Promise((res) => { const t = db.transaction('docs').objectStore('docs').get('autosave'); t.onsuccess = () => res(t.result); }); if (!v || !v.json) throw new Error('no autosave'); });
+} catch (e) { fail('harness', e); }
+finish();
+</script>
+</body></html>
